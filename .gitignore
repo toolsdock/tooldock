@@ -1,0 +1,10 @@
+node_modules
+.next
+.turbo
+dist
+.env*
+!.env.example
+.DS_Store
+
+# Production generated files
+production/nginx/conf.d/site.conf

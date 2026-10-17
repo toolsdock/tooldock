@@ -1,0 +1,62 @@
+.ad-slot {
+	width: min(1080px, calc(100% - 40px));
+	margin: 30px auto;
+	text-align: center;
+}
+
+.ad-slot__label {
+	display: block;
+	margin: 0 0 7px;
+	font-size: 9px;
+	font-weight: 650;
+	line-height: 1;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--subtext, var(--muted, #9ca5bb));
+	opacity: 0.72;
+}
+
+.ad-slot__unit,
+.ad-slot__preview {
+	display: block;
+	width: 100%;
+	min-height: 96px;
+	border-radius: 14px;
+}
+
+.ad-slot__preview {
+	display: grid;
+	place-items: center;
+	border: 1px dashed
+		color-mix(in srgb, var(--border, var(--line, #394052)) 82%, transparent);
+	background: color-mix(
+		in srgb,
+		var(--surface, var(--panel, var(--background, var(--bg, #151a29)))) 86%,
+		transparent
+	);
+	color: var(--subtext, var(--muted, #9ca5bb));
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.ad-slot--secondary {
+	margin-block: 44px;
+}
+
+.ad-slot--secondary .ad-slot__unit,
+.ad-slot--secondary .ad-slot__preview {
+	min-height: 120px;
+}
+
+@media (max-width: 700px) {
+	.ad-slot {
+		width: calc(100% - 24px);
+		margin-block: 24px;
+	}
+
+	.ad-slot__unit,
+	.ad-slot__preview {
+		min-height: 100px;
+		border-radius: 12px;
+	}
+}

@@ -1,0 +1,16 @@
+{
+	"name": "@tools/theme",
+	"version": "0.1.0",
+	"private": true,
+	"exports": {
+		"./provider": "./src/provider.tsx"
+	},
+	"type": "module",
+	"peerDependencies": {
+		"react": "^19.0.0"
+	},
+	"devDependencies": {
+		"@types/react": "^19.1.0",
+		"typescript": "^5.9.3"
+	}
+}

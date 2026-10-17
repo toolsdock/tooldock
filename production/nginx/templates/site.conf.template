@@ -1,0 +1,71 @@
+server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    return 308 https://${DOMAIN}$request_uri;
+}
+
+server {
+    # HTTP/3 over QUIC (UDP) and HTTP/2 + HTTP/1.1 over TLS (TCP).
+    listen 443 quic reuseport;
+    listen 443 ssl;
+    http2 on;
+
+    server_name ${DOMAIN};
+
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:20m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    add_header Alt-Svc 'h3=":443"; ma=86400' always;
+    add_header QUIC-Status $http3 always;
+
+    include /etc/nginx/snippets/security-headers.conf;
+
+    # Temporary root page until the ToolDock catalogue application is added.
+    location = / {
+        root /usr/share/nginx/html;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        try_files /index.html =404;
+    }
+
+    location = /index.html {
+        root /usr/share/nginx/html;
+        add_header X-Robots-Tag "noindex, nofollow" always;
+    }
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # robots.txt must live at the origin root. Nested app robots files are not
+    # sufficient for a single-domain multi-zone deployment.
+    location = /robots.txt {
+        default_type text/plain;
+        return 200 "User-agent: *\nAllow: /\nSitemap: https://$host/sitemap.xml\n";
+    }
+
+    # One sitemap index joins the five independently generated app sitemaps.
+    location = /sitemap.xml {
+        default_type application/xml;
+        return 200 '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap><loc>https://$host/image/remove-metadata/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/image/heic-to-jpg/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/image/resize-images/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/audio/cut-audio/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/audio/convert-audio/sitemap.xml</loc></sitemap>\n</sitemapindex>\n';
+    }
+
+    # AdSense expects ads.txt at the origin root. Clearframe already owns the
+    # shared ads.txt implementation, so expose that route here as /ads.txt.
+    location = /ads.txt {
+        include /etc/nginx/snippets/proxy-common.conf;
+        proxy_pass http://clearframe_upstream/image/remove-metadata/ads.txt;
+    }
+
+    include /etc/nginx/tools/*.conf;
+
+    location / {
+        return 404;
+    }
+}

@@ -1,0 +1,178 @@
+name: tooldock
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-tool-common: &tool-common
+  restart: unless-stopped
+  init: true
+  expose:
+    - "3000"
+  networks:
+    - tools
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  environment:
+    NODE_ENV: production
+    HOSTNAME: 0.0.0.0
+    PORT: 3000
+  logging: *default-logging
+
+x-network-build-args: &network-build-args
+  NEXT_PUBLIC_CLEARFRAME_URL: https://${DOMAIN:?Set DOMAIN in /var/tools/env/production.env}/image/remove-metadata
+  NEXT_PUBLIC_SKYCONVERT_URL: https://${DOMAIN:?Set DOMAIN in /var/tools/env/production.env}/image/heic-to-jpg
+  NEXT_PUBLIC_LEAFSIZE_URL: https://${DOMAIN:?Set DOMAIN in /var/tools/env/production.env}/image/resize-images
+  NEXT_PUBLIC_WAVECUT_URL: https://${DOMAIN:?Set DOMAIN in /var/tools/env/production.env}/audio/cut-audio
+  NEXT_PUBLIC_SOUNDSHIFT_URL: https://${DOMAIN:?Set DOMAIN in /var/tools/env/production.env}/audio/convert-audio
+  NEXT_PUBLIC_ADSENSE_ENABLED: ${ADSENSE_ENABLED:-false}
+  NEXT_PUBLIC_ADSENSE_CLIENT: ${ADSENSE_CLIENT:-}
+  NEXT_PUBLIC_ADS_PREVIEW: "false"
+
+services:
+  clearframe:
+    <<: *tool-common
+    image: tooldock/clearframe:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: production/docker/Dockerfile.tool
+      args:
+        <<: *network-build-args
+        APP_PACKAGE: "@tools/metadata-remover"
+        APP_DIR: metadata-remover
+        NEXT_PUBLIC_BASE_PATH: /image/remove-metadata
+        NEXT_PUBLIC_SITE_URL: https://${DOMAIN}/image/remove-metadata
+        NEXT_PUBLIC_ADSENSE_SLOT_PRIMARY: ${CLEARFRAME_ADSENSE_SLOT_PRIMARY:-}
+        NEXT_PUBLIC_ADSENSE_SLOT_SECONDARY: ${CLEARFRAME_ADSENSE_SLOT_SECONDARY:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/image/remove-metadata/en').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  skyconvert:
+    <<: *tool-common
+    image: tooldock/skyconvert:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: production/docker/Dockerfile.tool
+      args:
+        <<: *network-build-args
+        APP_PACKAGE: "@tools/heic-converter"
+        APP_DIR: heic-converter
+        NEXT_PUBLIC_BASE_PATH: /image/heic-to-jpg
+        NEXT_PUBLIC_HEIC_SITE_URL: https://${DOMAIN}/image/heic-to-jpg
+        NEXT_PUBLIC_ADSENSE_SLOT_PRIMARY: ${SKYCONVERT_ADSENSE_SLOT_PRIMARY:-}
+        NEXT_PUBLIC_ADSENSE_SLOT_SECONDARY: ${SKYCONVERT_ADSENSE_SLOT_SECONDARY:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/image/heic-to-jpg/en').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  leafsize:
+    <<: *tool-common
+    image: tooldock/leafsize:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: production/docker/Dockerfile.tool
+      args:
+        <<: *network-build-args
+        APP_PACKAGE: "@tools/image-resizer"
+        APP_DIR: image-resizer
+        NEXT_PUBLIC_BASE_PATH: /image/resize-images
+        NEXT_PUBLIC_RESIZER_SITE_URL: https://${DOMAIN}/image/resize-images
+        NEXT_PUBLIC_ADSENSE_SLOT_PRIMARY: ${LEAFSIZE_ADSENSE_SLOT_PRIMARY:-}
+        NEXT_PUBLIC_ADSENSE_SLOT_SECONDARY: ${LEAFSIZE_ADSENSE_SLOT_SECONDARY:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/image/resize-images/en').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  wavecut:
+    <<: *tool-common
+    image: tooldock/wavecut:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: production/docker/Dockerfile.tool
+      args:
+        <<: *network-build-args
+        APP_PACKAGE: "@tools/wavecut"
+        APP_DIR: wavecut
+        NEXT_PUBLIC_BASE_PATH: /audio/cut-audio
+        NEXT_PUBLIC_WAVECUT_SITE_URL: https://${DOMAIN}/audio/cut-audio
+        NEXT_PUBLIC_ADSENSE_SLOT_PRIMARY: ${WAVECUT_ADSENSE_SLOT_PRIMARY:-}
+        NEXT_PUBLIC_ADSENSE_SLOT_SECONDARY: ${WAVECUT_ADSENSE_SLOT_SECONDARY:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/audio/cut-audio/en').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  soundshift:
+    <<: *tool-common
+    image: tooldock/soundshift:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: production/docker/Dockerfile.tool
+      args:
+        <<: *network-build-args
+        APP_PACKAGE: "@tools/soundshift"
+        APP_DIR: soundshift
+        NEXT_PUBLIC_BASE_PATH: /audio/convert-audio
+        NEXT_PUBLIC_SOUNDSHIFT_SITE_URL: https://${DOMAIN}/audio/convert-audio
+        NEXT_PUBLIC_ADSENSE_SLOT_PRIMARY: ${SOUNDSHIFT_ADSENSE_SLOT_PRIMARY:-}
+        NEXT_PUBLIC_ADSENSE_SLOT_SECONDARY: ${SOUNDSHIFT_ADSENSE_SLOT_SECONDARY:-}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/audio/convert-audio/en').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  nginx:
+    image: macbre/nginx-http3:latest
+    restart: unless-stopped
+    depends_on:
+      clearframe:
+        condition: service_healthy
+      skyconvert:
+        condition: service_healthy
+      leafsize:
+        condition: service_healthy
+      wavecut:
+        condition: service_healthy
+      soundshift:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in /var/tools/env/production.env}
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/conf.d
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "443:443/udp"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/tools:/etc/nginx/tools:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - ./nginx/html:/usr/share/nginx/html:ro
+      - /var/tools/certs:/etc/nginx/ssl:ro
+    networks:
+      - tools
+    logging: *default-logging
+
+networks:
+  tools:
+    driver: bridge
+    internal: true

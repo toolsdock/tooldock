@@ -1,0 +1,17 @@
+{
+	"name": "@tools/i18n",
+	"version": "0.1.0",
+	"private": true,
+	"exports": {
+		"./provider": "./src/provider.tsx",
+		"./locale": "./src/locale.ts"
+	},
+	"type": "module",
+	"peerDependencies": {
+		"react": "^19.0.0"
+	},
+	"devDependencies": {
+		"@types/react": "^19.1.0",
+		"typescript": "^5.9.3"
+	}
+}
