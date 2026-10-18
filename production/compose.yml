@@ -168,11 +168,15 @@ services:
       - ./nginx/snippets:/etc/nginx/snippets:ro
       - ./nginx/html:/usr/share/nginx/html:ro
       - /var/tools/certs:/etc/nginx/ssl:ro
+    # Internal application traffic stays on tools; edge publishes HTTP(S).
     networks:
       - tools
+      - edge
     logging: *default-logging
 
 networks:
   tools:
     driver: bridge
     internal: true
+  edge:
+    driver: bridge
