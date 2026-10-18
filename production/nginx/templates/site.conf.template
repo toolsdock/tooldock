@@ -25,16 +25,10 @@ server {
 
     include /etc/nginx/snippets/security-headers.conf;
 
-    # Temporary root page until the ToolDock catalogue application is added.
-    location = / {
-        root /usr/share/nginx/html;
-        add_header X-Robots-Tag "noindex, nofollow" always;
-        try_files /index.html =404;
-    }
-
+    # The catalogue is now a standalone Next.js app at the origin root.
+    # Tool-specific locations below still win via their ^~ path matches.
     location = /index.html {
-        root /usr/share/nginx/html;
-        add_header X-Robots-Tag "noindex, nofollow" always;
+        return 308 /;
     }
 
     location = /healthz {
@@ -50,10 +44,17 @@ server {
         return 200 "User-agent: *\nAllow: /\nSitemap: https://$host/sitemap.xml\n";
     }
 
-    # One sitemap index joins the five independently generated app sitemaps.
+    # One sitemap index joins the portal and the five independent tool sitemaps.
     location = /sitemap.xml {
         default_type application/xml;
-        return 200 '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap><loc>https://$host/image/remove-metadata/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/image/heic-to-jpg/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/image/resize-images/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/audio/cut-audio/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/audio/convert-audio/sitemap.xml</loc></sitemap>\n</sitemapindex>\n';
+        return 200 '<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <sitemap><loc>https://$host/portal-sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/image/remove-metadata/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/image/heic-to-jpg/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/image/resize-images/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/audio/cut-audio/sitemap.xml</loc></sitemap>\n  <sitemap><loc>https://$host/audio/convert-audio/sitemap.xml</loc></sitemap>\n</sitemapindex>\n';
+    }
+
+    # The root sitemap index stays owned by Nginx; this rewrites the
+    # portal's own sitemap to a separate index entry.
+    location = /portal-sitemap.xml {
+        include /etc/nginx/snippets/proxy-common.conf;
+        proxy_pass http://portal_upstream/sitemap.xml;
     }
 
     # AdSense expects ads.txt at the origin root. Clearframe already owns the
@@ -65,8 +66,10 @@ server {
 
     include /etc/nginx/tools/*.conf;
 
+    # Home, categories, locale pages, portal assets and 404s.
     location / {
-        return 404;
+        include /etc/nginx/snippets/proxy-common.conf;
+        proxy_pass http://portal_upstream;
     }
 }
 

@@ -34,6 +34,25 @@ x-network-build-args: &network-build-args
   NEXT_PUBLIC_ADS_PREVIEW: "false"
 
 services:
+  portal:
+    <<: *tool-common
+    image: tooldock/portal:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: production/docker/Dockerfile.tool
+      args:
+        <<: *network-build-args
+        APP_PACKAGE: "@tools/portal"
+        APP_DIR: portal
+        NEXT_PUBLIC_BASE_PATH: ""
+        NEXT_PUBLIC_PORTAL_SITE_URL: https://${DOMAIN:?Set DOMAIN in /var/tools/env/production.env}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   clearframe:
     <<: *tool-common
     image: tooldock/clearframe:${IMAGE_TAG:-latest}
@@ -143,6 +162,8 @@ services:
     image: macbre/nginx-http3:latest
     restart: unless-stopped
     depends_on:
+      portal:
+        condition: service_healthy
       clearframe:
         condition: service_healthy
       skyconvert:

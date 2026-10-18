@@ -1,8 +1,11 @@
 # ToolDock production deployment
 
-The production setup keeps the five Next.js tools as independent containers behind one Nginx gateway.
+The production setup serves one ToolDock catalogue and five independent Next.js tools behind one Nginx gateway.
 
 ## Public routes
+
+- `/` and `/ru` -> ToolDock portal
+- `/image`, `/audio`, `/ru/image`, `/ru/audio` -> ToolDock categories
 
 - `/image/remove-metadata/` -> Clearframe
 - `/image/heic-to-jpg/` -> Skyconvert
@@ -20,6 +23,7 @@ The app `basePath` is supplied only during the production Docker build through `
 Internet
   -> :80 TCP / :443 TCP+UDP
   -> macbre/nginx-http3
+       -> Portal      :3000
        -> Clearframe  :3000
        -> Skyconvert  :3000
        -> Leafsize    :3000
@@ -87,7 +91,7 @@ Certificate issuance/renewal can be done with host Certbot, acme.sh, or another 
 
 `robots.txt` must be at the domain root, so the gateway owns it. `/sitemap.xml` is a sitemap index that points at the five app sitemaps. Each app receives its full canonical site URL during the Docker build, so canonical, hreflang, Open Graph and JSON-LD point to the public path rather than to an internal container address.
 
-The temporary root page is deliberately `noindex`. Replace it with the ToolDock catalogue application later; the tool URLs do not need to change.
+The portal is now publicly indexable on its canonical EN/RU URLs; the root sitemap index includes `portal-sitemap.xml` alongside the tool sitemaps. Do not accidentally restore the old static `noindex` root page.
 
 ## AdSense
 
