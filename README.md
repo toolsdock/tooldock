@@ -1,38 +1,32 @@
-# Web Tools — Turborepo
+# ToolDock Portal — исправление production build
 
-Monorepo for independent SEO-first browser utilities. First application: **Clearframe**, a privacy-first image metadata remover.
+Этот архив содержит только три изменённых файла внутри `apps/portal/src/app/`.
 
-## Requirements
-- Node.js 22+
-- pnpm 10+
+Исправлено:
+- `opengraph-image.tsx`: две строки заголовка теперь в явном flex-контейнере (Satori / ImageResponse).
+- `layout.tsx`: корневой `metadataBase` использует `site.url`, который при production build берётся из `NEXT_PUBLIC_PORTAL_SITE_URL`.
+- `globals.css`: flex-выравнивание с кроссбраузерными `flex-start`/`flex-end`.
 
-## Quick start
+## Локально
+
+Распаковать в корень монорепозитория, затем:
+
 ```bash
-corepack enable
-pnpm install
-pnpm dev
-```
-Open http://localhost:3000.
-
-## Commands
-```bash
-pnpm build
-pnpm typecheck
-pnpm check
-pnpm --filter @tools/metadata-remover dev
+pnpm --filter @tools/portal build
+git add apps/portal/src/app
+git commit -m "fix(portal): correct og image rendering and metadata base"
+git push origin main
 ```
 
-## Structure
-- `apps/metadata-remover` — Next.js application with FSD-style `app/pages/widgets/features/entities/shared` layering
-- `packages/ui` — reusable visual primitives
-- `packages/seo` — reusable SEO metadata helpers
-- `packages/tsconfig` — shared strict TypeScript settings
+## Сервер (после push)
 
-## SEO setup
-Before production set `NEXT_PUBLIC_SITE_URL=https://your-real-domain.com` in the app deployment environment. The application includes server-rendered landing copy, title/description, canonical URL, Open Graph, WebApplication JSON-LD, `robots.txt` and `sitemap.xml`. Replace the placeholder domain before indexing. Add a real OG image before launch.
+```bash
+cd /opt/tooldock
+git status --short
+git pull --ff-only origin main
+docker compose --env-file /var/tools/env/production.env -f production/compose.yml build portal
+```
 
-## Image processing caveats
-Images are processed locally via browser Canvas; no server upload. JPEG and WebP are **re-encoded** (quality can change), original EXIF/embedded metadata is not copied. Animated WebP becomes a static frame. Color profiles may change, and Canvas is not a forensic guarantee that *all possible* metadata in *all* browser encoders is absent. Supported input: JPG, PNG, static WebP, up to 20 MB and 50 MP. For production privacy claims, add automated tests that parse output metadata in major browsers.
+Далее сначала проверить собранный image и только потом запускать `up -d portal`.
 
-## Next steps
-Add an image metadata inspection feature, tests across browsers, accessibility checks, reusable theme tokens, analytics with consent, and standalone Docker/Nginx deployment for each app.
+**Примечание**: файлы проверены на структуру и корректность внесённых изменений, но полный Next.js build в этой среде не выполнен.
