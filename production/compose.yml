@@ -21,6 +21,7 @@ x-tool-common: &tool-common
     NODE_ENV: production
     HOSTNAME: 0.0.0.0
     PORT: 3000
+    ADSENSE_CLIENT: ${ADSENSE_CLIENT:-}
   logging: *default-logging
 
 x-network-build-args: &network-build-args
